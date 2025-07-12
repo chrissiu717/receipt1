@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test Frontend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
+        pre { background-color: #f0f0f0; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-break: break-all; }
+        input[type="file"] { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>CORS Test</h1>
+    <p>This page will send a POST request to your new Apps Script Web App.</p>
+    <input type="file" id="testFileInput">
+    <button id="sendTestPost">Send Test POST to Apps Script</button>
+    <pre id="responseOutput"></pre>
+
+    <script>
+        // IMPORTANT: Replace with the URL of your NEW, minimal Apps Script Web App
+        const TEST_APPS_SCRIPT_URL = 'YOUR_NEW_MINIMAL_APPS_SCRIPT_URL_HERE'; // PASTE THE NEW URL HERE!
+
+        document.getElementById('sendTestPost').addEventListener('click', async () => {
+            const fileInput = document.getElementById('testFileInput');
+            const responseOutput = document.getElementById('responseOutput');
+            responseOutput.textContent = 'Sending...';
+
+            if (!TEST_APPS_SCRIPT_URL || TEST_APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbybRkaeolL_3d0vbsIn9M6bj3cj7d-tbkKqDozr2mT-6IdKnA6l5xDw4dTLxr4Oj3Ja/exec') {
+                responseOutput.textContent = 'Error: Please update TEST_APPS_SCRIPT_URL in the JavaScript code.';
+                return;
+            }
+
+            if (!fileInput.files.length) {
+                responseOutput.textContent = 'Please select a file first (any small image file will do).';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async (e) => {
+                const base64Content = e.target.result.split(',')[1];
+                const mimeType = file.type;
+
+                try {
+                    const response = await fetch(TEST_APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            action: 'test', // A dummy action
+                            testData: 'Hello from frontend!',
+                            fileName: file.name,
+                            fileSize: file.size,
+                            fileMimeType: mimeType,
+                            // Only send a snippet of base64 to avoid huge logs for this test
+                            fileBase64Snippet: base64Content.substring(0, 50) + '...'
+                        })
+                    });
+
+                    const result = await response.json();
+                    responseOutput.textContent = 'Response from Apps Script:\n' + JSON.stringify(result, null, 2);
+                    console.log('Full response:', result);
+
+                } catch (error) {
+                    responseOutput.textContent = 'Error: ' + error.message + '\nCheck browser console and Apps Script logs.';
+                    console.error('Frontend fetch error:', error);
+                }
+            };
+            reader.readAsDataURL(file); // Read the file as Base64
+        });
+    </script>
+</body>
+</html>
