@@ -1,7 +1,442 @@
 <!DOCTYPE html>
-<html>
-<body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Processor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .input-group label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .input-group input[type="text"],
+        .input-group input[type="number"],
+        .input-group input[type="date"] {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #6366f1; /* Indigo-500 */
+        }
+        .button-primary {
+            background-color: #6366f1; /* Indigo-500 */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #4f46e5; /* Indigo-600 */
+            transform: translateY(-1px);
+        }
+        .button-primary:active {
+            transform: translateY(0);
+        }
+        .button-secondary {
+            background-color: #e0e7ff; /* Indigo-100 */
+            color: #4338ca; /* Indigo-700 */
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #c7d2fe; /* Indigo-200 */
+            transform: translateY(-1px);
+        }
+        .button-secondary:active {
+            transform: translateY(0);
+        }
+        #messageBox {
+            background-color: #fff3cd;
+            color: #664d03;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ffecb5;
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #6366f1;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .image-preview {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: block;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) {
+            .grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Receipt Processor</h1>
+
+        <!-- File Upload Section -->
+        <div class="flex flex-col items-center gap-4 p-6 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+            <label for="receiptImageInput" class="button-primary cursor-pointer">
+                Upload Receipt Image
+            </label>
+            <input type="file" id="receiptImageInput" accept="image/*" class="hidden">
+            <span class="text-gray-600 text-sm">or drag and drop here</span>
+            <img id="imagePreview" class="image-preview mt-4 max-h-64" src="https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image" alt="Receipt Preview">
+        </div>
+
+        <!-- Processing Button -->
+        <button id="processReceiptBtn" class="button-primary w-full mt-4">Process Receipt</button>
+        <div id="loadingSpinner" class="loading-spinner mt-4"></div>
+
+        <!-- Extracted Data Display -->
+        <div id="extractedDataSection" class="hidden mt-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Extracted Data</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="input-group">
+                    <label for="shopName">Shop Name:</label>
+                    <input type="text" id="shopName" class="rounded-lg">
+                </div>
+                <div class="input-group">
+                    <label for="totalExpense">Total Expense:</label>
+                    <input type="text" id="totalExpense" class="rounded-lg">
+                </div>
+                <div class="input-group">
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" class="rounded-lg">
+                </div>
+                <div class="input-group">
+                    <label for="paymentMethod">Payment Method:</label>
+                    <input type="text" id="paymentMethod" class="rounded-lg">
+                </div>
+                <div class="input-group md:col-span-2">
+                    <label for="categoryEstimate">Estimated Category:</label>
+                    <input type="text" id="categoryEstimate" class="rounded-lg">
+                </div>
+            </div>
+
+            <button id="confirmBtn" class="button-primary w-full mt-6">Confirm & Save</button>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="mt-4"></div>
+    </div>
+
+    <script type="module">
+        // Global variables for Firebase configuration, if needed in a more advanced setup.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const receiptImageInput = document.getElementById('receiptImageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const processReceiptBtn = document.getElementById('processReceiptBtn');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const extractedDataSection = document.getElementById('extractedDataSection');
+        const shopNameInput = document.getElementById('shopName');
+        const totalExpenseInput = document.getElementById('totalExpense');
+        const dateInput = document.getElementById('date');
+        const paymentMethodInput = document.getElementById('paymentMethod');
+        const categoryEstimateInput = document.getElementById('categoryEstimate');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const messageBox = document.getElementById('messageBox');
+
+        let base64Image = null; // Stores the base64 encoded image for API call
+        let imageMimeType = null; // Stores the MIME type of the uploaded image
+
+        // IMPORTANT: Replace with your Google Apps Script Web App URL
+        // Example: 'https://script.google.com/macros/s/AKfyc.../exec'
+        let appsScriptUrl = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+        // --- Utility Functions ---
+
+        /**
+         * Displays a message in the message box.
+         * @param {string} message The message to display.
+         * @param {string} type The type of message (e.g., 'success', 'error', 'info').
+         */
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            messageBox.className = 'mt-4 p-4 rounded-lg border'; // Reset classes
+
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700', 'border-red-200');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-700', 'border-green-200');
+            } else { // info
+                messageBox.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-200');
+            }
+        }
+
+        /**
+         * Hides the message box.
+         */
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
+
+        /**
+         * Shows the loading spinner.
+         */
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+            processReceiptBtn.disabled = true;
+            confirmBtn.disabled = true; // Disable confirm button during processing
+            processReceiptBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        /**
+         * Hides the loading spinner.
+         */
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+            processReceiptBtn.disabled = false;
+            confirmBtn.disabled = false; // Enable confirm button after processing
+            processReceiptBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // --- Event Listeners ---
+
+        // Handle image file selection
+        receiptImageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    // Store base64 for API call, remove the "data:image/jpeg;base64," prefix
+                    base64Image = e.target.result.split(',')[1];
+                    imageMimeType = file.type; // Store the actual MIME type of the file
+
+                    hideMessageBox(); // Clear any previous messages
+                    extractedDataSection.classList.add('hidden'); // Hide extracted data if new image
+                };
+                reader.onerror = (error) => {
+                    console.error("Error reading file:", error);
+                    showMessage("Error reading image file.", "error");
+                    imagePreview.src = "https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image";
+                    base64Image = null;
+                    imageMimeType = null;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.src = "https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image";
+                base64Image = null;
+                imageMimeType = null;
+                hideMessageBox();
+                extractedDataSection.classList.add('hidden');
+            }
+        });
+
+        // Handle drag and drop
+        imagePreview.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            imagePreview.classList.add('border-indigo-500', 'border-2');
+        });
+
+        imagePreview.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            imagePreview.classList.remove('border-indigo-500', 'border-2');
+        });
+
+        imagePreview.addEventListener('drop', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            imagePreview.classList.remove('border-indigo-500', 'border-2');
+
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                receiptImageInput.files = files; // Assign files to the input element
+                receiptImageInput.dispatchEvent(new Event('change')); // Trigger change event
+            }
+        });
+
+
+        // Process Receipt Button Click (Now sends image to Apps Script for Gemini processing)
+        processReceiptBtn.addEventListener('click', async () => {
+            if (!base64Image) {
+                showMessage("Please upload a receipt image first.", "error");
+                return;
+            }
+            if (!appsScriptUrl || appsScriptUrl === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                showMessage("Please set your Google Apps Script Web App URL in the JavaScript code to enable processing.", "error");
+                return;
+            }
+
+            hideMessageBox();
+            extractedDataSection.classList.add('hidden');
+            showLoading();
+            showMessage("Sending image to backend for processing...", "info");
+
+            try {
+                const response = await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'processReceipt', // Indicate the action for Apps Script
+                        base64Image: base64Image,
+                        imageMimeType: imageMimeType
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success' && result.extractedData) {
+                    const parsedData = result.extractedData;
+
+                    // Populate the input fields
+                    shopNameInput.value = parsedData.shopName || 'N/A';
+                    totalExpenseInput.value = parsedData.totalExpense !== undefined ? parsedData.totalExpense : '0.00';
+                    dateInput.value = parsedData.date && parsedData.date.match(/^\d{4}-\d{2}-\d{2}$/) ? parsedData.date : '';
+                    paymentMethodInput.value = parsedData.paymentMethod || 'N/A';
+                    categoryEstimateInput.value = parsedData.categoryEstimate || 'Other';
+
+                    extractedDataSection.classList.remove('hidden');
+                    showMessage("Data extracted successfully! Please review and confirm.", "success");
+
+                } else {
+                    showMessage(`Could not extract data: ${result.message || 'Unknown error from backend.'}`, "error");
+                    console.error("Backend Error during processing:", result);
+                }
+
+            } catch (error) {
+                console.error("Network or Fetch Error during processing:", error);
+                showMessage("An error occurred while communicating with the backend for processing. Please try again.", "error");
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Confirm Button Click (Now sends confirmed data to Apps Script for saving)
+        confirmBtn.addEventListener('click', async () => {
+            // Validate date format before sending
+            if (!dateInput.value || !dateInput.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                showMessage("Please ensure the date is in YYYY-MM-DD format.", "error");
+                return;
+            }
+
+            const confirmedData = {
+                shopName: shopNameInput.value,
+                totalExpense: totalExpenseInput.value,
+                date: dateInput.value,
+                paymentMethod: paymentMethodInput.value,
+                category: categoryEstimateInput.value
+            };
+
+            if (!base64Image) {
+                showMessage("No image available to upload. Please process a receipt first.", "error");
+                return;
+            }
+
+            if (!appsScriptUrl || appsScriptUrl === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+                showMessage("Please set your Google Apps Script Web App URL in the JavaScript code to enable saving.", "error");
+                return;
+            }
+
+            showLoading();
+            showMessage("Saving data and uploading image...", "info");
+
+            try {
+                const response = await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'saveData', // Indicate the action for Apps Script
+                        confirmedData: confirmedData,
+                        base64Image: base64Image,
+                        imageMimeType: imageMimeType
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showMessage("Data successfully saved to Google Sheet and image uploaded to Google Drive!", "success");
+                    // Clear the form for a new receipt
+                    shopNameInput.value = '';
+                    totalExpenseInput.value = '';
+                    dateInput.value = '';
+                    paymentMethodInput.value = '';
+                    categoryEstimateInput.value = '';
+                    imagePreview.src = "https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image";
+                    base64Image = null;
+                    imageMimeType = null;
+                    extractedDataSection.classList.add('hidden');
+                } else {
+                    showMessage(`Error saving data: ${result.message}`, "error");
+                    console.error("Backend Error during saving:", result.message);
+                }
+
+            } catch (error) {
+                console.error("Network or Fetch Error during saving:", error);
+                showMessage("An error occurred while communicating with the backend for saving. Please check your internet connection and Apps Script deployment.", "error");
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Initial state
+        hideMessageBox();
+        hideLoading();
+        extractedDataSection.classList.add('hidden');
+
+    </script>
 </body>
 </html>
