@@ -6,456 +6,358 @@
     <title>Receipt Processor</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: "Inter", sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
         }
         .container {
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-            max-width: 900px;
-            width: 100%;
+            max-width: 800px;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .custom-file-upload {
+            border: 2px dashed #cbd5e0;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: #4a5568;
         }
-        .input-group label {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-            display: block;
-        }
-        .input-group input[type="text"],
-        .input-group input[type="number"],
-        .input-group input[type="date"] {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        .input-group input:focus {
-            outline: none;
-            border-color: #6366f1; /* Indigo-500 */
+        .custom-file-upload:hover {
+            border-color: #a0aec0;
+            background-color: #edf2f7;
         }
         .button-primary {
-            background-color: #6366f1; /* Indigo-500 */
+            background-color: #4285F4; /* Google Blue */
             color: white;
-            padding: 12px 25px;
-            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            border: none;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .button-primary:hover {
-            background-color: #4f46e5; /* Indigo-600 */
-            transform: translateY(-1px);
-        }
-        .button-primary:active {
-            transform: translateY(0);
+            background-color: #357ae8;
         }
         .button-secondary {
-            background-color: #e0e7ff; /* Indigo-100 */
-            color: #4338ca; /* Indigo-700 */
-            padding: 12px 25px;
-            border-radius: 8px;
+            background-color: #f8f9fa;
+            color: #3c4043;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            border: none;
+            border: 1px solid #dadce0;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
         }
         .button-secondary:hover {
-            background-color: #c7d2fe; /* Indigo-200 */
-            transform: translateY(-1px);
+            background-color: #e8eaed;
         }
-        .button-secondary:active {
-            transform: translateY(0);
-        }
-        #messageBox {
-            background-color: #fff3cd;
-            color: #664d03;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ffecb5;
-            margin-top: 20px;
-            display: none; /* Hidden by default */
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
         .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #6366f1;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4285F4;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 24px;
+            height: 24px;
             animation: spin 1s linear infinite;
-            display: none; /* Hidden by default */
-            margin: 0 auto;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .image-preview {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            display: block;
-            margin: 0 auto;
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
         }
-        @media (min-width: 768px) {
-            .grid-cols-2 {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Receipt Processor</h1>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-8 rounded-xl shadow-lg w-full">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Receipt Processor</h1>
 
         <!-- File Upload Section -->
-        <div class="flex flex-col items-center gap-4 p-6 border border-dashed border-gray-300 rounded-lg bg-gray-50">
-            <label for="receiptImageInput" class="button-primary cursor-pointer">
-                Upload Receipt Image
+        <div id="upload-section" class="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+            <label for="receipt-input" class="custom-file-upload text-lg font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <span>Upload or Take Photo of Receipt</span>
             </label>
-            <input type="file" id="receiptImageInput" accept="image/*" class="hidden">
-            <span class="text-gray-600 text-sm">or drag and drop here</span>
-            <img id="imagePreview" class="image-preview mt-4 max-h-64" src="https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image" alt="Receipt Preview">
+            <input type="file" id="receipt-input" accept="image/*" capture="environment" class="hidden">
+            <p class="text-sm text-gray-500 mt-2">Accepted formats: JPG, PNG. Max size: 5MB.</p>
+            <div id="image-preview-container" class="mt-6 hidden">
+                <img id="image-preview" src="#" alt="Receipt Preview" class="max-w-full h-auto rounded-lg shadow-md mx-auto">
+                <button id="process-button" class="button-primary mt-6 w-full">Process Receipt</button>
+            </div>
         </div>
 
-        <!-- Processing Button -->
-        <button id="processReceiptBtn" class="button-primary w-full mt-4">Process Receipt</button>
-        <div id="loadingSpinner" class="loading-spinner mt-4"></div>
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden flex flex-col items-center justify-center py-8">
+            <div class="loading-spinner"></div>
+            <p class="mt-4 text-gray-600">Processing receipt, please wait...</p>
+        </div>
 
-        <!-- Extracted Data Display -->
-        <div id="extractedDataSection" class="hidden mt-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Extracted Data</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="input-group">
-                    <label for="shopName">Shop Name:</label>
-                    <input type="text" id="shopName" class="rounded-lg">
+        <!-- Extracted Data Display Section -->
+        <div id="data-display-section" class="hidden card p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Review & Confirm Data</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="shop-name" class="block text-sm font-medium text-gray-700">Shop Name:</label>
+                    <input type="text" id="shop-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div class="input-group">
-                    <label for="totalExpense">Total Expense:</label>
-                    <input type="text" id="totalExpense" class="rounded-lg">
+                <div>
+                    <label for="total-expense" class="block text-sm font-medium text-gray-700">Total Expense:</label>
+                    <input type="number" step="0.01" id="total-expense" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div class="input-group">
-                    <label for="date">Date:</label>
-                    <input type="date" id="date" class="rounded-lg">
+                <div>
+                    <label for="receipt-date" class="block text-sm font-medium text-gray-700">Date:</label>
+                    <input type="date" id="receipt-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div class="input-group">
-                    <label for="paymentMethod">Payment Method:</label>
-                    <input type="text" id="paymentMethod" class="rounded-lg">
-                </div>
-                <div class="input-group md:col-span-2">
-                    <label for="categoryEstimate">Estimated Category:</label>
-                    <input type="text" id="categoryEstimate" class="rounded-lg">
+                <div>
+                    <label for="category" class="block text-sm font-medium text-gray-700">Category:</label>
+                    <input type="text" id="category" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
             </div>
-
-            <button id="confirmBtn" class="button-primary w-full mt-6">Confirm & Save</button>
+            <div class="flex justify-center gap-4 mt-8">
+                <button id="confirm-button" class="button-primary">Confirm & Save</button>
+                <button id="cancel-button" class="button-secondary">Cancel</button>
+            </div>
         </div>
-
-        <!-- Message Box -->
-        <div id="messageBox" class="mt-4"></div>
     </div>
 
-    <script type="module">
-        // Global variables for Firebase configuration, if needed in a more advanced setup.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    <!-- Message Box for Alerts -->
+    <div id="message-box-container" class="hidden">
+        <div class="overlay"></div>
+        <div class="message-box">
+            <p id="message-box-text" class="text-lg text-gray-700 mb-6"></p>
+            <button id="message-box-ok" class="button-primary">OK</button>
+        </div>
+    </div>
 
-        const receiptImageInput = document.getElementById('receiptImageInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const processReceiptBtn = document.getElementById('processReceiptBtn');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const extractedDataSection = document.getElementById('extractedDataSection');
-        const shopNameInput = document.getElementById('shopName');
-        const totalExpenseInput = document.getElementById('totalExpense');
-        const dateInput = document.getElementById('date');
-        const paymentMethodInput = document.getElementById('paymentMethod');
-        const categoryEstimateInput = document.getElementById('categoryEstimate');
-        const confirmBtn = document.getElementById('confirmBtn');
-        const messageBox = document.getElementById('messageBox');
+    <script>
+        const receiptInput = document.getElementById('receipt-input');
+        const imagePreview = document.getElementById('image-preview');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const processButton = document.getElementById('process-button');
+        const uploadSection = document.getElementById('upload-section');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const dataDisplaySection = document.getElementById('data-display-section');
+        const shopNameInput = document.getElementById('shop-name');
+        const totalExpenseInput = document.getElementById('total-expense');
+        const receiptDateInput = document.getElementById('receipt-date');
+        const categoryInput = document.getElementById('category');
+        const confirmButton = document.getElementById('confirm-button');
+        const cancelButton = document.getElementById('cancel-button');
+        const messageBoxContainer = document.getElementById('message-box-container');
+        const messageBoxText = document.getElementById('message-box-text');
+        const messageBoxOkButton = document.getElementById('message-box-ok');
 
-        let base64Image = null; // Stores the base64 encoded image for API call
-        let imageMimeType = null; // Stores the MIME type of the uploaded image
+        let selectedFile = null; // To store the file object for later upload
 
-        // IMPORTANT: Replace with your n8n Webhook URL for this workflow
-        // Example: 'https://your-n8n-instance.cloud/webhook/your-unique-path'
-        let n8nWebhookUrl = 'https://chris831-n8n-free.hf.space/webhook/8b6de71d-3706-4ec7-8286-3c136196c308'; 
-
-        // --- Utility Functions ---
-
-        /**
-         * Displays a message in the message box.
-         * @param {string} message The message to display.
-         * @param {string} type The type of message (e.g., 'success', 'error', 'info').
-         */
-        function showMessage(message, type = 'info') {
-            messageBox.textContent = message;
-            messageBox.style.display = 'block';
-            messageBox.className = 'mt-4 p-4 rounded-lg border'; // Reset classes
-
-            if (type === 'error') {
-                messageBox.classList.add('bg-red-100', 'text-red-700', 'border-red-200');
-            } else if (type === 'success') {
-                messageBox.classList.add('bg-green-100', 'text-green-700', 'border-green-200');
-            } else { // info
-                messageBox.classList.add('bg-blue-100', 'text-blue-700', 'border-blue-200');
-            }
+        // --- Helper function for custom message box ---
+        function showMessageBox(message) {
+            messageBoxText.textContent = message;
+            messageBoxContainer.classList.remove('hidden');
         }
 
-        /**
-         * Hides the message box.
-         */
         function hideMessageBox() {
-            messageBox.style.display = 'none';
+            messageBoxContainer.classList.add('hidden');
         }
 
-        /**
-         * Shows the loading spinner.
-         */
-        function showLoading() {
-            loadingSpinner.style.display = 'block';
-            processReceiptBtn.disabled = true;
-            confirmBtn.disabled = true; // Disable confirm button during processing
-            processReceiptBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        }
-
-        /**
-         * Hides the loading spinner.
-         */
-        function hideLoading() {
-            loadingSpinner.style.display = 'none';
-            processReceiptBtn.disabled = false;
-            confirmBtn.disabled = false; // Enable confirm button after processing
-            processReceiptBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
+        messageBoxOkButton.addEventListener('click', hideMessageBox);
 
         // --- Event Listeners ---
 
-        // Handle image file selection
-        receiptImageInput.addEventListener('change', (event) => {
+        receiptInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
+                selectedFile = file; // Store the file
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = function(e) {
                     imagePreview.src = e.target.result;
-                    base64Image = e.target.result.split(',')[1];
-                    imageMimeType = file.type;
-
-                    hideMessageBox();
-                    extractedDataSection.classList.add('hidden');
-                };
-                reader.onerror = (error) => {
-                    console.error("Error reading file:", error);
-                    showMessage("Error reading image file.", "error");
-                    imagePreview.src = "https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image";
-                    base64Image = null;
-                    imageMimeType = null;
+                    imagePreviewContainer.classList.remove('hidden');
+                    processButton.classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
             } else {
-                imagePreview.src = "https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image";
-                base64Image = null;
-                imageMimeType = null;
-                hideMessageBox();
-                extractedDataSection.classList.add('hidden');
+                imagePreviewContainer.classList.add('hidden');
+                processButton.classList.add('hidden');
+                selectedFile = null;
             }
         });
 
-        // Handle drag and drop
-        imagePreview.addEventListener('dragover', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            imagePreview.classList.add('border-indigo-500', 'border-2');
-        });
-
-        imagePreview.addEventListener('dragleave', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            imagePreview.classList.remove('border-indigo-500', 'border-2');
-        });
-
-        imagePreview.addEventListener('drop', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            imagePreview.classList.remove('border-indigo-500', 'border-2');
-
-            const files = event.dataTransfer.files;
-            if (files.length > 0) {
-                receiptImageInput.files = files;
-                receiptImageInput.dispatchEvent(new Event('change'));
-            }
-        });
-
-
-        // Process Receipt Button Click (Sends image to n8n for Gemini processing)
-        processReceiptBtn.addEventListener('click', async () => {
-            if (!base64Image) {
-                showMessage("Please upload a receipt image first.", "error");
-                return;
-            }
-            if (!n8nWebhookUrl || n8nWebhookUrl === 'YOUR_N8N_WEBHOOK_URL_HERE') {
-                showMessage("Please set your n8n Webhook URL in the JavaScript code to enable processing.", "error");
+        processButton.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showMessageBox('Please select a receipt image first.');
                 return;
             }
 
-            hideMessageBox();
-            extractedDataSection.classList.add('hidden');
-            showLoading();
-            showMessage("Sending image to n8n backend for processing...", "info");
+            // Hide upload section, show loading
+            uploadSection.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
 
             try {
-                const response = await fetch(n8nWebhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'processReceipt', // Indicate the action for n8n
-                        base64Image: base64Image,
-                        imageMimeType: imageMimeType
-                    })
+                // Convert file to base64 for sending to Cloud Function
+                const base64Image = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result.split(',')[1]); // Get base64 string without data:image/jpeg;base64,
+                    reader.onerror = reject;
+                    reader.readAsDataURL(selectedFile);
                 });
 
-                // Check if the response is OK (status 200-299)
+                // --- IMPORTANT: Replace with your Cloud Function URL ---
+                // This URL will be obtained after deploying your processReceiptOCR Cloud Function
+                const processFunctionUrl = 'YOUR_PROCESS_RECEIPT_CLOUD_FUNCTION_URL_HERE';
+
+                const response = await fetch(processFunctionUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ imageData: base64Image, mimeType: selectedFile.type }),
+                });
+
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('HTTP Error Details from n8n:', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        responseBody: errorText
-                    });
-                    throw new Error(`n8n backend HTTP error! status: ${response.status}, response: ${errorText.substring(0, 200)}...`);
+                    throw new Error(`Error processing receipt: ${response.status} - ${errorText}`);
                 }
 
                 const result = await response.json();
+                console.log('Gemini OCR Result:', result);
 
-                if (result.status === 'success' && result.extractedData) {
-                    const parsedData = result.extractedData;
+                // Populate form fields with extracted data
+                shopNameInput.value = result.shopName || '';
+                totalExpenseInput.value = result.totalExpense ? parseFloat(result.totalExpense).toFixed(2) : '';
+                receiptDateInput.value = result.receiptDate || ''; // Format as YYYY-MM-DD
+                categoryInput.value = result.category || '';
 
-                    shopNameInput.value = parsedData.shopName || 'N/A';
-                    totalExpenseInput.value = parsedData.totalExpense !== undefined ? parsedData.totalExpense : '0.00';
-                    dateInput.value = parsedData.date && parsedData.date.match(/^\d{4}-\d{2}-\d{2}$/) ? parsedData.date : '';
-                    paymentMethodInput.value = parsedData.paymentMethod || 'N/A';
-                    categoryEstimateInput.value = parsedData.categoryEstimate || 'Other';
-
-                    extractedDataSection.classList.remove('hidden');
-                    showMessage("Data extracted successfully! Please review and confirm.", "success");
-
-                } else {
-                    showMessage(`Could not extract data: ${result.message || 'Unknown error from n8n backend.'}`, "error");
-                    console.error("n8n Backend Error during processing:", result);
-                }
+                // Hide loading, show data display
+                loadingIndicator.classList.add('hidden');
+                dataDisplaySection.classList.remove('hidden');
 
             } catch (error) {
-                console.error("Network or Fetch Error during processing (n8n):", error);
-                showMessage("An error occurred while communicating with the n8n backend for processing. Please try again.", "error");
-            } finally {
-                hideLoading();
+                console.error('Failed to process receipt:', error);
+                showMessageBox('Failed to process receipt. Please try again. Error: ' + error.message);
+                // Go back to upload section
+                loadingIndicator.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+                imagePreviewContainer.classList.add('hidden');
+                processButton.classList.add('hidden');
+                selectedFile = null;
             }
         });
 
-        // Confirm Button Click (Sends confirmed data to n8n for saving)
-        confirmBtn.addEventListener('click', async () => {
-            if (!dateInput.value || !dateInput.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                showMessage("Please ensure the date is in YYYY-MM-DD format.", "error");
-                return;
-            }
-
+        confirmButton.addEventListener('click', async () => {
+            // Collect confirmed data
             const confirmedData = {
                 shopName: shopNameInput.value,
-                totalExpense: totalExpenseInput.value,
-                date: dateInput.value,
-                paymentMethod: paymentMethodInput.value,
-                category: categoryEstimateInput.value
+                totalExpense: parseFloat(totalExpenseInput.value),
+                receiptDate: receiptDateInput.value,
+                category: categoryInput.value,
             };
 
-            if (!base64Image) {
-                showMessage("No image available to upload. Please process a receipt first.", "error");
+            if (!selectedFile) {
+                showMessageBox('No image found to save.');
                 return;
             }
 
-            if (!n8nWebhookUrl || n8nWebhookUrl === 'YOUR_N8N_WEBHOOK_URL_HERE') {
-                showMessage("Please set your n8n Webhook URL in the JavaScript code to enable saving.", "error");
-                return;
-            }
+            // Convert file to base64 again for saving
+            const base64Image = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(selectedFile);
+            });
 
-            showLoading();
-            showMessage("Saving data and uploading image via n8n...", "info");
+            // Hide data display, show loading
+            dataDisplaySection.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
 
             try {
-                const response = await fetch(n8nWebhookUrl, {
+                // --- IMPORTANT: Replace with your Cloud Function URL ---
+                // This URL will be obtained after deploying your saveReceiptData Cloud Function
+                const saveFunctionUrl = 'YOUR_SAVE_RECEIPT_CLOUD_FUNCTION_URL_HERE';
+
+                const response = await fetch(saveFunctionUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        action: 'saveData', // Indicate the action for n8n
-                        confirmedData: confirmedData,
-                        base64Image: base64Image,
-                        imageMimeType: imageMimeType
-                    })
+                        receiptData: confirmedData,
+                        imageData: base64Image,
+                        imageMimeType: selectedFile.type,
+                        imageFileName: selectedFile.name || `receipt_${new Date().toISOString()}.jpg`
+                    }),
                 });
 
-                // Check if the response is OK (status 200-299)
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('HTTP Error Details from n8n:', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        responseBody: errorText
-                    });
-                    throw new Error(`n8n backend HTTP error! status: ${response.status}, response: ${errorText.substring(0, 200)}...`);
+                    throw new Error(`Error saving data: ${response.status} - ${errorText}`);
                 }
 
                 const result = await response.json();
+                console.log('Save Result:', result);
+                showMessageBox('Receipt data saved successfully!');
 
-                if (result.status === 'success') {
-                    showMessage("Data successfully saved to Google Sheet and image uploaded to Google Drive!", "success");
-                    // Clear the form for a new receipt
-                    shopNameInput.value = '';
-                    totalExpenseInput.value = '';
-                    dateInput.value = '';
-                    paymentMethodInput.value = '';
-                    categoryEstimateInput.value = '';
-                    imagePreview.src = "https://placehold.co/400x250/E0E7FF/4338CA?text=No+Image";
-                    base64Image = null;
-                    imageMimeType = null;
-                    extractedDataSection.classList.add('hidden');
-                } else {
-                    showMessage(`Error saving data: ${result.message}`, "error");
-                    console.error("n8n Backend Error during saving:", result.message);
-                }
+                // Reset UI after successful save
+                loadingIndicator.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+                imagePreviewContainer.classList.add('hidden');
+                processButton.classList.add('hidden');
+                selectedFile = null;
 
             } catch (error) {
-                console.error("Network or Fetch Error during saving (n8n):", error);
-                showMessage("An error occurred while communicating with the n8n backend for saving. Please try again.", "error");
-            } finally {
-                hideLoading();
+                console.error('Failed to save receipt data:', error);
+                showMessageBox('Failed to save receipt data. Please try again. Error: ' + error.message);
+                // Go back to data display section for user to re-confirm or edit
+                loadingIndicator.classList.add('hidden');
+                dataDisplaySection.classList.remove('hidden'); // Show it again for correction
             }
         });
 
-        // Initial state
-        hideMessageBox();
-        hideLoading();
-        extractedDataSection.classList.add('hidden');
-
+        cancelButton.addEventListener('click', () => {
+            // Reset UI to initial state
+            dataDisplaySection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            imagePreviewContainer.classList.add('hidden');
+            processButton.classList.add('hidden');
+            selectedFile = null; // Clear the selected file
+            shopNameInput.value = '';
+            totalExpenseInput.value = '';
+            receiptDateInput.value = '';
+            categoryInput.value = '';
+        });
     </script>
 </body>
 </html>
