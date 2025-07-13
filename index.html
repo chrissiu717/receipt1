@@ -192,9 +192,9 @@
         let base64Image = null; // Stores the base64 encoded image for API call
         let imageMimeType = null; // Stores the MIME type of the uploaded image
 
-        // IMPORTANT: Replace with your Google Apps Script Web App URL
-        // Example: 'https://script.google.com/macros/s/AKfyc.../exec'
-        let appsScriptUrl = 'https://script.google.com/macros/s/AKfycbx4BKGpsFhOWhNMi5kbSZkJ6QEjRxavtdDRh52eeGOygl933OOuxCTPuFBj6wNU0j9l8Q/exec';
+        // IMPORTANT: Replace with your n8n Webhook URL for this workflow
+        // Example: 'https://your-n8n-instance.cloud/webhook/your-unique-path'
+        let n8nWebhookUrl = 'https://chris831-n8n-free.hf.space/webhook/8b6de71d-3706-4ec7-8286-3c136196c308'; 
 
         // --- Utility Functions ---
 
@@ -255,12 +255,11 @@
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     imagePreview.src = e.target.result;
-                    // Store base64 for API call, remove the "data:image/jpeg;base64," prefix
                     base64Image = e.target.result.split(',')[1];
-                    imageMimeType = file.type; // Store the actual MIME type of the file
+                    imageMimeType = file.type;
 
-                    hideMessageBox(); // Clear any previous messages
-                    extractedDataSection.classList.add('hidden'); // Hide extracted data if new image
+                    hideMessageBox();
+                    extractedDataSection.classList.add('hidden');
                 };
                 reader.onerror = (error) => {
                     console.error("Error reading file:", error);
@@ -299,47 +298,57 @@
 
             const files = event.dataTransfer.files;
             if (files.length > 0) {
-                receiptImageInput.files = files; // Assign files to the input element
-                receiptImageInput.dispatchEvent(new Event('change')); // Trigger change event
+                receiptImageInput.files = files;
+                receiptImageInput.dispatchEvent(new Event('change'));
             }
         });
 
 
-        // Process Receipt Button Click (Now sends image to Apps Script for Gemini processing)
+        // Process Receipt Button Click (Sends image to n8n for Gemini processing)
         processReceiptBtn.addEventListener('click', async () => {
             if (!base64Image) {
                 showMessage("Please upload a receipt image first.", "error");
                 return;
             }
-            if (!appsScriptUrl || appsScriptUrl === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                showMessage("Please set your Google Apps Script Web App URL in the JavaScript code to enable processing.", "error");
+            if (!n8nWebhookUrl || n8nWebhookUrl === 'YOUR_N8N_WEBHOOK_URL_HERE') {
+                showMessage("Please set your n8n Webhook URL in the JavaScript code to enable processing.", "error");
                 return;
             }
 
             hideMessageBox();
             extractedDataSection.classList.add('hidden');
             showLoading();
-            showMessage("Sending image to backend for processing...", "info");
+            showMessage("Sending image to n8n backend for processing...", "info");
 
             try {
-                const response = await fetch(appsScriptUrl, {
+                const response = await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        action: 'processReceipt', // Indicate the action for Apps Script
+                        action: 'processReceipt', // Indicate the action for n8n
                         base64Image: base64Image,
                         imageMimeType: imageMimeType
                     })
                 });
+
+                // Check if the response is OK (status 200-299)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error Details from n8n:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        responseBody: errorText
+                    });
+                    throw new Error(`n8n backend HTTP error! status: ${response.status}, response: ${errorText.substring(0, 200)}...`);
+                }
 
                 const result = await response.json();
 
                 if (result.status === 'success' && result.extractedData) {
                     const parsedData = result.extractedData;
 
-                    // Populate the input fields
                     shopNameInput.value = parsedData.shopName || 'N/A';
                     totalExpenseInput.value = parsedData.totalExpense !== undefined ? parsedData.totalExpense : '0.00';
                     dateInput.value = parsedData.date && parsedData.date.match(/^\d{4}-\d{2}-\d{2}$/) ? parsedData.date : '';
@@ -350,21 +359,20 @@
                     showMessage("Data extracted successfully! Please review and confirm.", "success");
 
                 } else {
-                    showMessage(`Could not extract data: ${result.message || 'Unknown error from backend.'}`, "error");
-                    console.error("Backend Error during processing:", result);
+                    showMessage(`Could not extract data: ${result.message || 'Unknown error from n8n backend.'}`, "error");
+                    console.error("n8n Backend Error during processing:", result);
                 }
 
             } catch (error) {
-                console.error("Network or Fetch Error during processing:", error);
-                showMessage("An error occurred while communicating with the backend for processing. Please try again.", "error");
+                console.error("Network or Fetch Error during processing (n8n):", error);
+                showMessage("An error occurred while communicating with the n8n backend for processing. Please try again.", "error");
             } finally {
                 hideLoading();
             }
         });
 
-        // Confirm Button Click (Now sends confirmed data to Apps Script for saving)
+        // Confirm Button Click (Sends confirmed data to n8n for saving)
         confirmBtn.addEventListener('click', async () => {
-            // Validate date format before sending
             if (!dateInput.value || !dateInput.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 showMessage("Please ensure the date is in YYYY-MM-DD format.", "error");
                 return;
@@ -383,27 +391,38 @@
                 return;
             }
 
-            if (!appsScriptUrl || appsScriptUrl === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-                showMessage("Please set your Google Apps Script Web App URL in the JavaScript code to enable saving.", "error");
+            if (!n8nWebhookUrl || n8nWebhookUrl === 'YOUR_N8N_WEBHOOK_URL_HERE') {
+                showMessage("Please set your n8n Webhook URL in the JavaScript code to enable saving.", "error");
                 return;
             }
 
             showLoading();
-            showMessage("Saving data and uploading image...", "info");
+            showMessage("Saving data and uploading image via n8n...", "info");
 
             try {
-                const response = await fetch(appsScriptUrl, {
+                const response = await fetch(n8nWebhookUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        action: 'saveData', // Indicate the action for Apps Script
+                        action: 'saveData', // Indicate the action for n8n
                         confirmedData: confirmedData,
                         base64Image: base64Image,
                         imageMimeType: imageMimeType
                     })
                 });
+
+                // Check if the response is OK (status 200-299)
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('HTTP Error Details from n8n:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        responseBody: errorText
+                    });
+                    throw new Error(`n8n backend HTTP error! status: ${response.status}, response: ${errorText.substring(0, 200)}...`);
+                }
 
                 const result = await response.json();
 
@@ -421,12 +440,12 @@
                     extractedDataSection.classList.add('hidden');
                 } else {
                     showMessage(`Error saving data: ${result.message}`, "error");
-                    console.error("Backend Error during saving:", result.message);
+                    console.error("n8n Backend Error during saving:", result.message);
                 }
 
             } catch (error) {
-                console.error("Network or Fetch Error during saving:", error);
-                showMessage("An error occurred while communicating with the backend for saving. Please check your internet connection and Apps Script deployment.", "error");
+                console.error("Network or Fetch Error during saving (n8n):", error);
+                showMessage("An error occurred while communicating with the n8n backend for saving. Please try again.", "error");
             } finally {
                 hideLoading();
             }
